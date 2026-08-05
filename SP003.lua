@@ -479,6 +479,16 @@ local topSep = mk("Frame", {BackgroundColor3 = Color3.fromRGB(60,60,65), BorderS
 local footer = mk("Frame", {BackgroundTransparency = 1, Position = UDim2.new(0, 0, 1, -25), Size = UDim2.new(1, 0, 0, 25), Parent = window})
 mk("Frame", {BackgroundColor3 = Color3.fromRGB(60,60,65), BorderSizePixel=0, Position=UDim2.new(0,0,0,0), Size=UDim2.new(1,0,0,1), Parent=footer})
 
+local tgLink = mk("TextButton", {
+    Text = "t.me/LuaRobloxScripts",
+    Font = Enum.Font.GothamBold,
+    TextSize = 11,
+    TextColor3 = Color3.fromRGB(120, 150, 255),
+    BackgroundTransparency = 1,
+    Position = UDim2.new(0, 5, 0, 0),
+    Size = UDim2.new(0, 130, 1, 0),
+    TextXAlignment = Enum.TextXAlignment.Left,
+    Parent = footer
 })
 
 tgLink.MouseButton1Click:Connect(function()
