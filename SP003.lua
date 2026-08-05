@@ -1,4 +1,4 @@
---// Universal LuaRBX - Thai Edition (Pro Fly & Locked Stats)
+--// Universal LuaRBX - Thai Edition (Adjustable Stats + Removed Fly/Ghost)
 --// Keybind เปิด/ปิดเมนู: J
 
 local Players = game:GetService("Players")
@@ -116,10 +116,7 @@ local espSettings = {Box = true, Name = true, Health = true, Dist = true, Tracer
 local espConnection = nil
 
 local noclipEnabled, noclipConnection = false, nil
-local flyEnabled = false
-local flySpeed = 50
-local flyLoop = nil
-
+local flySpeed = 50 
 local customWalkSpeed = 16
 local customJumpPower = 50
 
@@ -127,7 +124,6 @@ local spinEnabled, spinSpeed, spinBav = false, 20, nil
 local fakeLagEnabled, fakeLagConnection = false, nil
 local airWalkEnabled, airWalkPart, airWalkConnection = false, nil, nil
 local flingEnabled, flingConnection = false, nil
-local invisEnabled, invisPart, invisConnection = false, nil, nil
 
 local updateFlySpeedUI = nil
 
@@ -350,53 +346,18 @@ local function toggleNoclip(state)
     else if noclipConnection then noclipConnection:Disconnect() end end
 end
 
--- บินแบบโปร (Character Fly)
-local function toggleFly(state)
-    flyEnabled = state
-    local char = lp.Character
-    if not char then return end
-    local root = char:FindFirstChild("HumanoidRootPart")
-    local hum = char:FindFirstChild("Humanoid")
-    if not root or not hum then return end
-
-    if state then
-        local bg = Instance.new("BodyGyro", root)
-        bg.P = 9e4
-        bg.maxTorque = Vector3.new(9e9, 9e9, 9e9)
-        bg.cframe = root.CFrame
-        
-        local bv = Instance.new("BodyVelocity", root)
-        bv.velocity = Vector3.new(0, 0, 0)
-        bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
-        
-        hum.PlatformStand = true
-        
-        flyLoop = RunService.RenderStepped:Connect(function()
-            local cam = workspace.CurrentCamera
-            local moveDir = Vector3.zero
-            
-            if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + cam.CFrame.LookVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - cam.CFrame.LookVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - cam.CFrame.RightVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + cam.CFrame.RightVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
-            if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then moveDir = moveDir - Vector3.new(0, 1, 0) end
-            
-            bg.cframe = cam.CFrame
-            if moveDir.Magnitude > 0 then
-                bv.velocity = moveDir.Unit * flySpeed
-            else
-                bv.velocity = Vector3.zero
-            end
-        end)
-    else
-        if flyLoop then flyLoop:Disconnect() flyLoop = nil end
-        for _, v in pairs(root:GetChildren()) do
-            if v:IsA("BodyGyro") or v:IsA("BodyVelocity") then v:Destroy() end
+local function handleFlyScroll(actionName, inputState, inputObject)
+    if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+        if inputObject.Position.Z ~= 0 then
+            local change = (inputObject.Position.Z > 0) and 3 or -3
+            flySpeed = math.clamp(flySpeed + change, 10, 1000)
+            if updateFlySpeedUI then updateFlySpeedUI(flySpeed) end
         end
-        hum.PlatformStand = false
+        return Enum.ContextActionResult.Sink
     end
+    return Enum.ContextActionResult.Pass
 end
+ContextActionService:BindActionAtPriority("SeHubFlyScroll", handleFlyScroll, false, 3000, Enum.UserInputType.MouseWheel)
 
 local function toggleAirWalk(state)
     airWalkEnabled = state
@@ -460,49 +421,9 @@ local function toggleFakeLag(state)
     else if fakeLagConnection then fakeLagConnection:Disconnect() end if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then lp.Character.HumanoidRootPart.Anchored = false end end
 end
 
--- ===== โหมดล่องหน (Ghost / FE Invis) =====
-local function toggleInvis(state)
-    invisEnabled = state
-    local root = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
-    if state then
-        if not root then return end
-        invisPart = Instance.new("Part") invisPart.Name = "SeGhost" invisPart.Size = Vector3.new(4, 5, 4) invisPart.Color = Color3.fromRGB(0, 255, 255) invisPart.Material = Enum.Material.Neon invisPart.Transparency = 0.6 invisPart.Anchored = true invisPart.CanCollide = false invisPart.CFrame = root.CFrame invisPart.Parent = workspace
-        Instance.new("Highlight", invisPart).FillColor = Color3.fromRGB(0, 255, 255)
-        -- วาร์ปร่างจริงขึ้นไปบนฟ้าสูงๆ ป้องกันบัคตกแมพตาย
-        root.CFrame = CFrame.new(root.Position.X, 100000, root.Position.Z) 
-        root.Anchored = true
-        
-        invisConnection = RunService.RenderStepped:Connect(function()
-            if not invisPart then return end
-            workspace.CurrentCamera.CameraSubject = invisPart
-            local cam = workspace.CurrentCamera
-            local move = Vector3.zero
-            if UserInputService:IsKeyDown(Enum.KeyCode.W) then move = move + cam.CFrame.LookVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.S) then move = move - cam.CFrame.LookVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.A) then move = move - cam.CFrame.RightVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.D) then move = move + cam.CFrame.RightVector end
-            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0, 1, 0) end
-            if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then move = move - Vector3.new(0, 1, 0) end
-            if move.Magnitude > 0 then
-                invisPart.CFrame = CFrame.new(invisPart.Position + (move.Unit * (flySpeed * 0.03)), invisPart.Position + cam.CFrame.LookVector)
-            end
-        end)
-    else
-        if invisConnection then invisConnection:Disconnect() end
-        if root and invisPart then
-            root.Anchored = false 
-            root.CFrame = invisPart.CFrame 
-            root.AssemblyLinearVelocity = Vector3.zero
-        end
-        if invisPart then invisPart:Destroy() end
-        if lp.Character and lp.Character:FindFirstChild("Humanoid") then workspace.CurrentCamera.CameraSubject = lp.Character.Humanoid end
-    end
-end
-
 lp.CharacterAdded:Connect(function()
-    flyEnabled, spinEnabled, fakeLagEnabled, airWalkEnabled, flingEnabled, invisEnabled = false, false, false, false, false, false
-    if airWalkPart then airWalkPart:Destroy() end if invisPart then invisPart:Destroy() end
-    if flyLoop then flyLoop:Disconnect() flyLoop = nil end
+    spinEnabled, fakeLagEnabled, airWalkEnabled, flingEnabled = false, false, false, false
+    if airWalkPart then airWalkPart:Destroy() end 
 end)
 
 --========================
@@ -558,16 +479,6 @@ local topSep = mk("Frame", {BackgroundColor3 = Color3.fromRGB(60,60,65), BorderS
 local footer = mk("Frame", {BackgroundTransparency = 1, Position = UDim2.new(0, 0, 1, -25), Size = UDim2.new(1, 0, 0, 25), Parent = window})
 mk("Frame", {BackgroundColor3 = Color3.fromRGB(60,60,65), BorderSizePixel=0, Position=UDim2.new(0,0,0,0), Size=UDim2.new(1,0,0,1), Parent=footer})
 
-local tgLink = mk("TextButton", {
-    Text = "t.me/LuaRobloxScripts",
-    Font = Enum.Font.GothamBold,
-    TextSize = 11,
-    TextColor3 = Color3.fromRGB(120, 150, 255),
-    BackgroundTransparency = 1,
-    Position = UDim2.new(0, 5, 0, 0),
-    Size = UDim2.new(0, 130, 1, 0),
-    TextXAlignment = Enum.TextXAlignment.Left,
-    Parent = footer
 })
 
 tgLink.MouseButton1Click:Connect(function()
@@ -644,18 +555,12 @@ local function createSwitch(parent, text, callback)
     mk("UICorner", {Parent=c, CornerRadius=UDim.new(0,8)})
     mk("TextLabel", {Text = text, Font=Enum.Font.GothamMedium, TextSize=13, TextColor3=Color3.fromRGB(240,240,240), BackgroundTransparency=1, Position=UDim2.new(0,15,0,0), Size=UDim2.new(0.6,0,1,0), TextXAlignment=Enum.TextXAlignment.Left, Parent=c})
     
-    -- ทำปุ่มแจ้งเตือน BETA ให้เฉพาะโหมดผี
-    if string.find(text, "ล่องหน") then 
-        mk("TextLabel", {Text="BETA", TextColor3=Color3.fromRGB(255,80,80), Font=Enum.Font.GothamBlack, TextSize=9, BackgroundTransparency=1, Position=UDim2.new(0, 115, 0, 17), Size=UDim2.new(0,30,0,10), Parent=c}) 
-    end
-    
     local savedKey = Config.Binds[text] local displayKey = savedKey and "["..savedKey.."]" or ""
     local bindLabel = mk("TextLabel", {Text=displayKey, Font=Enum.Font.GothamBold, TextSize=11, TextColor3=Color3.fromRGB(150,150,150), BackgroundTransparency=1, AnchorPoint=Vector2.new(1,0.5), Position=UDim2.new(1,-65,0.5,0), Size=UDim2.new(0,40,1,0), TextXAlignment=Enum.TextXAlignment.Right, Parent=c})
     local sw = mk("TextButton", {Text = "", AutoButtonColor=false, BackgroundColor3=Color3.fromRGB(50,50,55), AnchorPoint=Vector2.new(1,0.5), Position=UDim2.new(1,-15,0.5,0), Size=UDim2.fromOffset(40, 20), Parent=c})
     mk("UICorner", {Parent=sw, CornerRadius=UDim.new(1,0)})
     local circ = mk("Frame", {BackgroundColor3 = Color3.new(1,1,1), Size=UDim2.fromOffset(14,14), AnchorPoint=Vector2.new(0,0.5), Position=UDim2.new(0,3,0.5,0), Parent=sw})
     mk("UICorner", {Parent=circ, CornerRadius=UDim.new(1,0)})
-    
     local on = false local bind = savedKey and Enum.KeyCode[savedKey] or nil
     local function doToggle()
         on = not on
@@ -713,20 +618,47 @@ local function createEspControl(parent, callback)
     UserInputService.InputBegan:Connect(function(input, gp) if not gp and bind and input.KeyCode == bind then doToggle() end end)
 end
 
+-- ระบบปรับค่าแบบใหม่ (มีปุ่ม + / - เพื่อให้กดบนมือถือง่ายขึ้น)
 local function createDragValue(parent, text, min, max, def, callback)
     local c = mk("Frame", {BackgroundColor3=Color3.fromRGB(35,35,38), Size=UDim2.new(1,-10,0,44), Parent=parent})
     mk("UICorner", {Parent=c, CornerRadius=UDim.new(0,8)})
-    mk("TextLabel", {Text=text, Font=Enum.Font.GothamMedium, TextSize=13, TextColor3=Color3.fromRGB(240,240,240), BackgroundTransparency=1, Position=UDim2.new(0,15,0,0), Size=UDim2.new(0.6,0,1,0), TextXAlignment=Enum.TextXAlignment.Left, Parent=c})
-    local btn = mk("TextButton", {Text=tostring(def), Font=Enum.Font.GothamBold, TextSize=14, TextColor3=CURRENT.Accent, BackgroundColor3=Color3.fromRGB(25,25,28), Size=UDim2.new(0,60,0,24), AnchorPoint=Vector2.new(1,0.5), Position=UDim2.new(1,-15,0.5,0), AutoButtonColor=false, Parent=c})
+    mk("TextLabel", {Text=text, Font=Enum.Font.GothamMedium, TextSize=13, TextColor3=Color3.fromRGB(240,240,240), BackgroundTransparency=1, Position=UDim2.new(0,15,0,0), Size=UDim2.new(0.4,0,1,0), TextXAlignment=Enum.TextXAlignment.Left, Parent=c})
+    
+    -- ปุ่มแสดงตัวเลขตรงกลาง
+    local btn = mk("TextButton", {Text=tostring(def), Font=Enum.Font.GothamBold, TextSize=14, TextColor3=CURRENT.Accent, BackgroundColor3=Color3.fromRGB(25,25,28), Size=UDim2.new(0,50,0,24), AnchorPoint=Vector2.new(1,0.5), Position=UDim2.new(1,-45,0.5,0), AutoButtonColor=false, Parent=c})
     mk("UICorner", {Parent=btn, CornerRadius=UDim.new(0,6)})
     mk("UIStroke", {Parent=btn, Color=Color3.fromRGB(60,60,65), Thickness=1, Transparency=0.5}) table.insert(ThemeObjects.Accents, btn)
+    
+    -- ปุ่มลบ (-)
+    local minusBtn = mk("TextButton", {Text="-", Font=Enum.Font.GothamBold, TextSize=22, TextColor3=Color3.fromRGB(255,80,80), BackgroundTransparency=1, Size=UDim2.new(0,30,0,30), AnchorPoint=Vector2.new(1,0.5), Position=UDim2.new(1,-100,0.5,0), Parent=c})
+    -- ปุ่มบวก (+)
+    local plusBtn = mk("TextButton", {Text="+", Font=Enum.Font.GothamBold, TextSize=22, TextColor3=Color3.fromRGB(80,255,120), BackgroundTransparency=1, Size=UDim2.new(0,30,0,30), AnchorPoint=Vector2.new(1,0.5), Position=UDim2.new(1,-10,0.5,0), Parent=c})
+    
     if text == "ความเร็วบิน" then
-        updateFlySpeedUI = function(val) btn.Text = tostring(val) end
+        updateFlySpeedUI = function(v) btn.Text = tostring(v) end
     end
-    local val = def local dragging = false local dragStart = Vector2.new() local startVal = val
-    btn.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true dragStart = i.Position startVal = val end end)
-    UserInputService.InputChanged:Connect(function(i) if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then local deltaX = i.Position.X - dragStart.X local change = math.floor(deltaX / 2) val = math.clamp(startVal + change, min, max) btn.Text = tostring(val) callback(val) end end)
-    UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false if (i.Position - dragStart).Magnitude < 3 then local box = mk("TextBox", {Size=UDim2.fromScale(1,1), BackgroundTransparency=1, Text="", PlaceholderText="#", TextColor3=CURRENT.Accent, Font=Enum.Font.GothamBold, TextSize=14, Parent=btn}) box:CaptureFocus() box.FocusLost:Connect(function(e) if e and tonumber(box.Text) then val = math.clamp(tonumber(box.Text), min, max) btn.Text = tostring(val) callback(val) end box:Destroy() end) end end end)
+    
+    local val = def
+    
+    local function updateVal(newVal)
+        val = math.clamp(newVal, min, max)
+        btn.Text = tostring(val)
+        callback(val)
+    end
+    
+    minusBtn.MouseButton1Click:Connect(function() playClick(1) updateVal(val - 1) end)
+    plusBtn.MouseButton1Click:Connect(function() playClick(1) updateVal(val + 1) end)
+    
+    -- หากต้องการพิมพ์ตัวเลข ก็ยังสามารถกดที่ตัวเลขตรงกลางได้
+    btn.MouseButton1Click:Connect(function()
+        playClick(1)
+        local box = mk("TextBox", {Size=UDim2.fromScale(1,1), BackgroundTransparency=1, Text="", PlaceholderText="#", TextColor3=CURRENT.Accent, Font=Enum.Font.GothamBold, TextSize=14, Parent=btn}) 
+        box:CaptureFocus() 
+        box.FocusLost:Connect(function(e) 
+            if tonumber(box.Text) then updateVal(tonumber(box.Text)) end 
+            box:Destroy() 
+        end)
+    end)
 end
 
 --========================
@@ -740,13 +672,14 @@ local pSettings = createTab("ตั้งค่า", setContainer)
 local setBtn = tabs[#tabs].Btn
 setBtn.Size = UDim2.new(1,0,1,0) setBtn.Position = UDim2.new(0,0,0,0)
 
--- > COMBAT TAB (ย้าย Ghost มานี่ด้วย)
+-- > COMBAT TAB (หน้าต่อสู้ลบ Ghost และ Fly ออกไปตามคำสั่ง)
 createEspControl(pCombat, function(v) toggleESP(v) end)
-createSwitch(pCombat, "👻 ล่องหน (Ghost)", function(v) toggleInvis(v) end)
-createSwitch(pCombat, "บินอิสระ (Fly)", function(v) toggleFly(v) end)
+
+-- เลื่อนแถบปรับความเร็วขึ้นมาแทนที่
 createDragValue(pCombat, "ความเร็วบิน", 10, 1000, 50, function(v) flySpeed = v end)
 createDragValue(pCombat, "ความเร็วเดิน (ล็อค)", 16, 250, 16, function(v) customWalkSpeed = v end)
 createDragValue(pCombat, "พลังกระโดด (ล็อค)", 50, 350, 50, function(v) customJumpPower = v end)
+
 createSwitch(pCombat, "ทะลุกำแพง (Noclip)", function(v) toggleNoclip(v) end)
 createSwitch(pCombat, "เดินบนอากาศ (Air Walk)", function(v) toggleAirWalk(v) end)
 createSwitch(pCombat, "ป่วนผู้เล่น (TP Fling)", function(v) toggleFling(v) end)
@@ -774,7 +707,7 @@ for i, theme in ipairs(PRESETS) do
     end)
 end
 
--- > TELEPORT TAB (Fixed Spectate and Layout)
+-- > TELEPORT TAB
 pTeleport.CanvasSize = UDim2.new(0,0,0,0)
 local topBarTP = mk("Frame", {BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 35), Parent = pTeleport})
 local searchBox = mk("TextBox", {BackgroundColor3 = Color3.fromRGB(35,35,38), Size = UDim2.new(1, -45, 1, 0), Position = UDim2.new(0, 0, 0, 0), Font = Enum.Font.GothamMedium, TextSize = 13, TextColor3 = Color3.fromRGB(240,240,240), PlaceholderText = "ค้นหาผู้เล่น...", PlaceholderColor3 = Color3.fromRGB(150,150,150), TextXAlignment = Enum.TextXAlignment.Left, Parent = topBarTP})
