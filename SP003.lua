@@ -1,4 +1,4 @@
---// Universal LuaRBX - Thai Edition (Fixed Spectate Bug)
+--// Universal LuaRBX - Thai Edition (Pro Fly & Locked Stats)
 --// Keybind เปิด/ปิดเมนู: J
 
 local Players = game:GetService("Players")
@@ -116,8 +116,13 @@ local espSettings = {Box = true, Name = true, Health = true, Dist = true, Tracer
 local espConnection = nil
 
 local noclipEnabled, noclipConnection = false, nil
-local flyEnabled, flySpeed = false, 50
-local flyBodyV, flyBodyG
+local flyEnabled = false
+local flySpeed = 50
+local flyLoop = nil
+
+local customWalkSpeed = 16
+local customJumpPower = 50
+
 local spinEnabled, spinSpeed, spinBav = false, 20, nil
 local fakeLagEnabled, fakeLagConnection = false, nil
 local airWalkEnabled, airWalkPart, airWalkConnection = false, nil, nil
@@ -125,6 +130,20 @@ local flingEnabled, flingConnection = false, nil
 local invisEnabled, invisPart, invisConnection = false, nil, nil
 
 local updateFlySpeedUI = nil
+
+-- บังคับค่า WalkSpeed & JumpPower ป้องกันเกมรีเซ็ต
+RunService.Stepped:Connect(function()
+    if lp.Character and lp.Character:FindFirstChild("Humanoid") then
+        local hum = lp.Character.Humanoid
+        if customWalkSpeed ~= 16 then
+            hum.WalkSpeed = customWalkSpeed
+        end
+        if customJumpPower ~= 50 then
+            hum.UseJumpPower = true
+            hum.JumpPower = customJumpPower
+        end
+    end
+end)
 
 --========================
 -- GUI Base
@@ -331,46 +350,53 @@ local function toggleNoclip(state)
     else if noclipConnection then noclipConnection:Disconnect() end end
 end
 
+-- บินแบบโปร (Character Fly)
 local function toggleFly(state)
     flyEnabled = state
     local char = lp.Character
     if not char then return end
     local root = char:FindFirstChild("HumanoidRootPart")
     local hum = char:FindFirstChild("Humanoid")
-    if state and root and hum then
-        flyBodyV = Instance.new("BodyVelocity", root) flyBodyV.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-        flyBodyG = Instance.new("BodyGyro", root) flyBodyG.MaxTorque = Vector3.new(9e9, 9e9, 9e9) flyBodyG.P = 9e4
+    if not root or not hum then return end
+
+    if state then
+        local bg = Instance.new("BodyGyro", root)
+        bg.P = 9e4
+        bg.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+        bg.cframe = root.CFrame
+        
+        local bv = Instance.new("BodyVelocity", root)
+        bv.velocity = Vector3.new(0, 0, 0)
+        bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+        
         hum.PlatformStand = true
-        task.spawn(function()
-            while flyEnabled and char.Parent do
-                local cam = workspace.CurrentCamera
-                local move = Vector3.zero
-                if UserInputService:IsKeyDown(Enum.KeyCode.W) then move = move + cam.CFrame.LookVector end
-                if UserInputService:IsKeyDown(Enum.KeyCode.S) then move = move - cam.CFrame.LookVector end
-                if UserInputService:IsKeyDown(Enum.KeyCode.A) then move = move - cam.CFrame.RightVector end
-                if UserInputService:IsKeyDown(Enum.KeyCode.D) then move = move + cam.CFrame.RightVector end
-                flyBodyV.Velocity = move * flySpeed
-                flyBodyG.CFrame = cam.CFrame
-                RunService.RenderStepped:Wait()
+        
+        flyLoop = RunService.RenderStepped:Connect(function()
+            local cam = workspace.CurrentCamera
+            local moveDir = Vector3.zero
+            
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + cam.CFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - cam.CFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - cam.CFrame.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + cam.CFrame.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
+            if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then moveDir = moveDir - Vector3.new(0, 1, 0) end
+            
+            bg.cframe = cam.CFrame
+            if moveDir.Magnitude > 0 then
+                bv.velocity = moveDir.Unit * flySpeed
+            else
+                bv.velocity = Vector3.zero
             end
         end)
     else
-        if flyBodyV then flyBodyV:Destroy() end if flyBodyG then flyBodyG:Destroy() end if hum then hum.PlatformStand = false end
-    end
-end
-
-local function handleFlyScroll(actionName, inputState, inputObject)
-    if flyEnabled and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
-        if inputObject.Position.Z ~= 0 then
-            local change = (inputObject.Position.Z > 0) and 3 or -3
-            flySpeed = math.clamp(flySpeed + change, 10, 1000)
-            if updateFlySpeedUI then updateFlySpeedUI(flySpeed) end
+        if flyLoop then flyLoop:Disconnect() flyLoop = nil end
+        for _, v in pairs(root:GetChildren()) do
+            if v:IsA("BodyGyro") or v:IsA("BodyVelocity") then v:Destroy() end
         end
-        return Enum.ContextActionResult.Sink
+        hum.PlatformStand = false
     end
-    return Enum.ContextActionResult.Pass
 end
-ContextActionService:BindActionAtPriority("SeHubFlyScroll", handleFlyScroll, false, 3000, Enum.UserInputType.MouseWheel)
 
 local function toggleAirWalk(state)
     airWalkEnabled = state
@@ -434,7 +460,7 @@ local function toggleFakeLag(state)
     else if fakeLagConnection then fakeLagConnection:Disconnect() end if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then lp.Character.HumanoidRootPart.Anchored = false end end
 end
 
--- ===== INVIS FUNCTION (FE Invisible) =====
+-- ===== โหมดล่องหน (Ghost / FE Invis) =====
 local function toggleInvis(state)
     invisEnabled = state
     local root = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
@@ -442,7 +468,10 @@ local function toggleInvis(state)
         if not root then return end
         invisPart = Instance.new("Part") invisPart.Name = "SeGhost" invisPart.Size = Vector3.new(4, 5, 4) invisPart.Color = Color3.fromRGB(0, 255, 255) invisPart.Material = Enum.Material.Neon invisPart.Transparency = 0.6 invisPart.Anchored = true invisPart.CanCollide = false invisPart.CFrame = root.CFrame invisPart.Parent = workspace
         Instance.new("Highlight", invisPart).FillColor = Color3.fromRGB(0, 255, 255)
-        root.CFrame = CFrame.new(root.Position.X, -500, root.Position.Z) root.Anchored = true
+        -- วาร์ปร่างจริงขึ้นไปบนฟ้าสูงๆ ป้องกันบัคตกแมพตาย
+        root.CFrame = CFrame.new(root.Position.X, 100000, root.Position.Z) 
+        root.Anchored = true
+        
         invisConnection = RunService.RenderStepped:Connect(function()
             if not invisPart then return end
             workspace.CurrentCamera.CameraSubject = invisPart
@@ -455,13 +484,15 @@ local function toggleInvis(state)
             if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0, 1, 0) end
             if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then move = move - Vector3.new(0, 1, 0) end
             if move.Magnitude > 0 then
-                invisPart.CFrame = CFrame.new(invisPart.Position + (move * (flySpeed * 0.05)), invisPart.Position + cam.CFrame.LookVector)
+                invisPart.CFrame = CFrame.new(invisPart.Position + (move.Unit * (flySpeed * 0.03)), invisPart.Position + cam.CFrame.LookVector)
             end
         end)
     else
         if invisConnection then invisConnection:Disconnect() end
         if root and invisPart then
-            root.Anchored = false root.CFrame = invisPart.CFrame root.AssemblyLinearVelocity = Vector3.zero
+            root.Anchored = false 
+            root.CFrame = invisPart.CFrame 
+            root.AssemblyLinearVelocity = Vector3.zero
         end
         if invisPart then invisPart:Destroy() end
         if lp.Character and lp.Character:FindFirstChild("Humanoid") then workspace.CurrentCamera.CameraSubject = lp.Character.Humanoid end
@@ -471,6 +502,7 @@ end
 lp.CharacterAdded:Connect(function()
     flyEnabled, spinEnabled, fakeLagEnabled, airWalkEnabled, flingEnabled, invisEnabled = false, false, false, false, false, false
     if airWalkPart then airWalkPart:Destroy() end if invisPart then invisPart:Destroy() end
+    if flyLoop then flyLoop:Disconnect() flyLoop = nil end
 end)
 
 --========================
@@ -611,13 +643,19 @@ local function createSwitch(parent, text, callback)
     local c = mk("Frame", {BackgroundColor3 = Color3.fromRGB(35,35,38), Size=UDim2.new(1,-10,0,44), Parent=parent})
     mk("UICorner", {Parent=c, CornerRadius=UDim.new(0,8)})
     mk("TextLabel", {Text = text, Font=Enum.Font.GothamMedium, TextSize=13, TextColor3=Color3.fromRGB(240,240,240), BackgroundTransparency=1, Position=UDim2.new(0,15,0,0), Size=UDim2.new(0.6,0,1,0), TextXAlignment=Enum.TextXAlignment.Left, Parent=c})
-    if text == "👻 ล่องหน (Ghost)" then mk("TextLabel", {Text="BETA", TextColor3=Color3.fromRGB(255,80,80), Font=Enum.Font.GothamBlack, TextSize=9, BackgroundTransparency=1, Position=UDim2.new(0, 115, 0, 17), Size=UDim2.new(0,30,0,10), Parent=c}) end
+    
+    -- ทำปุ่มแจ้งเตือน BETA ให้เฉพาะโหมดผี
+    if string.find(text, "ล่องหน") then 
+        mk("TextLabel", {Text="BETA", TextColor3=Color3.fromRGB(255,80,80), Font=Enum.Font.GothamBlack, TextSize=9, BackgroundTransparency=1, Position=UDim2.new(0, 115, 0, 17), Size=UDim2.new(0,30,0,10), Parent=c}) 
+    end
+    
     local savedKey = Config.Binds[text] local displayKey = savedKey and "["..savedKey.."]" or ""
     local bindLabel = mk("TextLabel", {Text=displayKey, Font=Enum.Font.GothamBold, TextSize=11, TextColor3=Color3.fromRGB(150,150,150), BackgroundTransparency=1, AnchorPoint=Vector2.new(1,0.5), Position=UDim2.new(1,-65,0.5,0), Size=UDim2.new(0,40,1,0), TextXAlignment=Enum.TextXAlignment.Right, Parent=c})
     local sw = mk("TextButton", {Text = "", AutoButtonColor=false, BackgroundColor3=Color3.fromRGB(50,50,55), AnchorPoint=Vector2.new(1,0.5), Position=UDim2.new(1,-15,0.5,0), Size=UDim2.fromOffset(40, 20), Parent=c})
     mk("UICorner", {Parent=sw, CornerRadius=UDim.new(1,0)})
     local circ = mk("Frame", {BackgroundColor3 = Color3.new(1,1,1), Size=UDim2.fromOffset(14,14), AnchorPoint=Vector2.new(0,0.5), Position=UDim2.new(0,3,0.5,0), Parent=sw})
     mk("UICorner", {Parent=circ, CornerRadius=UDim.new(1,0)})
+    
     local on = false local bind = savedKey and Enum.KeyCode[savedKey] or nil
     local function doToggle()
         on = not on
@@ -702,18 +740,18 @@ local pSettings = createTab("ตั้งค่า", setContainer)
 local setBtn = tabs[#tabs].Btn
 setBtn.Size = UDim2.new(1,0,1,0) setBtn.Position = UDim2.new(0,0,0,0)
 
--- > COMBAT TAB
+-- > COMBAT TAB (ย้าย Ghost มานี่ด้วย)
 createEspControl(pCombat, function(v) toggleESP(v) end)
-createSwitch(pCombat, "บินอิสระ (Camera Fly)", function(v) toggleFly(v) end)
+createSwitch(pCombat, "👻 ล่องหน (Ghost)", function(v) toggleInvis(v) end)
+createSwitch(pCombat, "บินอิสระ (Fly)", function(v) toggleFly(v) end)
 createDragValue(pCombat, "ความเร็วบิน", 10, 1000, 50, function(v) flySpeed = v end)
-createDragValue(pCombat, "ความเร็วเดิน", 16, 250, 16, function(v) if lp.Character and lp.Character:FindFirstChild("Humanoid") then lp.Character.Humanoid.WalkSpeed=v end end)
-createDragValue(pCombat, "พลังกระโดด", 50, 350, 50, function(v) if lp.Character and lp.Character:FindFirstChild("Humanoid") then lp.Character.Humanoid.UseJumpPower=true lp.Character.Humanoid.JumpPower=v end end)
+createDragValue(pCombat, "ความเร็วเดิน (ล็อค)", 16, 250, 16, function(v) customWalkSpeed = v end)
+createDragValue(pCombat, "พลังกระโดด (ล็อค)", 50, 350, 50, function(v) customJumpPower = v end)
 createSwitch(pCombat, "ทะลุกำแพง (Noclip)", function(v) toggleNoclip(v) end)
 createSwitch(pCombat, "เดินบนอากาศ (Air Walk)", function(v) toggleAirWalk(v) end)
 createSwitch(pCombat, "ป่วนผู้เล่น (TP Fling)", function(v) toggleFling(v) end)
 
 -- > FUNNY TAB
-createSwitch(pFunny, "👻 ล่องหน (Ghost)", function(v) toggleInvis(v) end)
 createSwitch(pFunny, "หมุนตัว (SpinBot)", function(v) toggleSpin(v) end)
 createDragValue(pFunny, "ความเร็วหมุน", 10, 100, 20, function(v) spinSpeed = v if spinEnabled and spinBav then spinBav.AngularVelocity = Vector3.new(0,v,0) end end)
 createSwitch(pFunny, "จำลองปิงกาก (Fake Lag)", function(v) toggleFakeLag(v) end)
@@ -738,15 +776,12 @@ end
 
 -- > TELEPORT TAB (Fixed Spectate and Layout)
 pTeleport.CanvasSize = UDim2.new(0,0,0,0)
-
--- แก้ไขบัค UIListLayout ด้วยการจัดกลุ่ม (Group) แถบด้านบน
 local topBarTP = mk("Frame", {BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 35), Parent = pTeleport})
 local searchBox = mk("TextBox", {BackgroundColor3 = Color3.fromRGB(35,35,38), Size = UDim2.new(1, -45, 1, 0), Position = UDim2.new(0, 0, 0, 0), Font = Enum.Font.GothamMedium, TextSize = 13, TextColor3 = Color3.fromRGB(240,240,240), PlaceholderText = "ค้นหาผู้เล่น...", PlaceholderColor3 = Color3.fromRGB(150,150,150), TextXAlignment = Enum.TextXAlignment.Left, Parent = topBarTP})
 mk("UICorner", {Parent=searchBox, CornerRadius=UDim.new(0, 8)}) mk("UIPadding", {Parent=searchBox, PaddingLeft=UDim.new(0, 12)})
 local resetCamBtn = mk("TextButton", {Text="📷", BackgroundColor3 = Color3.fromRGB(45,45,48), Size=UDim2.new(0,35,1,0), AnchorPoint=Vector2.new(1,0), Position=UDim2.new(1,0,0,0), Font=Enum.Font.Gotham, TextSize=18, TextColor3=Color3.new(1,1,1), AutoButtonColor=false, Parent=topBarTP})
 mk("UICorner", {Parent=resetCamBtn, CornerRadius=UDim.new(0,8)})
 
--- เพิ่มบังคับกล้อง
 resetCamBtn.MouseButton1Click:Connect(function()
     playClick(1)
     if lp.Character and lp.Character:FindFirstChild("Humanoid") then 
@@ -767,15 +802,12 @@ local function updatePlayerList(filter)
         if p ~= lp and (filter == "" or p.Name:lower():find(filter) or p.DisplayName:lower():find(filter)) then
             local card = mk("Frame", {BackgroundColor3 = Color3.fromRGB(35,35,38), Size = UDim2.new(1, 0, 0, 42), Parent = pList})
             mk("UICorner", {Parent=card, CornerRadius=UDim.new(0, 8)})
-            
-            -- แก้บัคปุ่มทับกัน โดยลดความกว้างของปุ่มเทเลพอร์ตลง (1, -60)
             local tpBtn = mk("TextButton", {BackgroundTransparency=1, Size=UDim2.new(1,-60,1,0), Text="", Parent=card})
             local av = mk("ImageLabel", {BackgroundTransparency=1, Size=UDim2.new(0, 30, 0, 30), Position=UDim2.new(0, 6, 0.5, -15), Image = Players:GetUserThumbnailAsync(p.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48), Parent=tpBtn})
             mk("UICorner", {Parent=av, CornerRadius=UDim.new(1,0)})
             mk("TextLabel", {BackgroundTransparency=1, Size=UDim2.new(1, -50, 0, 16), Position=UDim2.new(0, 45, 0, 6), Font=Enum.Font.GothamBold, Text=p.DisplayName, TextSize=13, TextColor3=Color3.fromRGB(240,240,240), TextXAlignment=Enum.TextXAlignment.Left, Parent=tpBtn})
             mk("TextLabel", {BackgroundTransparency=1, Size=UDim2.new(1, -50, 0, 14), Position=UDim2.new(0, 45, 0, 22), Font=Enum.Font.Gotham, Text="@"..p.Name, TextSize=11, TextColor3=Color3.fromRGB(150,150,150), TextXAlignment=Enum.TextXAlignment.Left, Parent=tpBtn})
             
-            -- แก้ปุ่มส่องผู้เล่น และเพิ่ม ZIndex ป้องกันโดนทับ
             local viewBtn = mk("TextButton", {Text="👁️", BackgroundTransparency=1, Size=UDim2.new(0,40,1,0), Position=UDim2.new(1,-40,0,0), Font=Enum.Font.Gotham, TextSize=18, TextColor3=Color3.fromRGB(200,200,200), ZIndex=5, Parent=card})
             
             tpBtn.MouseButton1Click:Connect(function() playClick(1) if lp.Character and p.Character then lp.Character:PivotTo(p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)) sendNotify("เทเลพอร์ตแล้ว", "ไปยัง " .. p.DisplayName) end end)
@@ -783,7 +815,6 @@ local function updatePlayerList(filter)
             viewBtn.MouseButton1Click:Connect(function() 
                 playClick(1) 
                 if p.Character and p.Character:FindFirstChild("Humanoid") then 
-                    -- บังคับเปลี่ยนกล้อง
                     workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
                     workspace.CurrentCamera.CameraSubject = p.Character:FindFirstChild("Humanoid") 
                     sendNotify("ส่องผู้เล่น", "กำลังดู: " .. p.DisplayName)
