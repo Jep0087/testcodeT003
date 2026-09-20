@@ -1,4 +1,4 @@
---// Universal LuaRBX - Thai Edition (AIO: V.Max Turbo - Zero Delay Optimization)
+--// Universal LuaRBX - Thai Edition (AIO: V.Max Turbo - Perfect Timing Fix)
 --// Keybind เปิด/ปิดเมนู: J
 
 -- ==========================================
@@ -109,7 +109,7 @@ mk("UICorner", {Parent=window, CornerRadius=UDim.new(0,10)})
 mk("UIStroke", {Parent=window, Color=Color3.fromRGB(65,65,65), Thickness=1, Transparency=0.4})
 
 local top = mk("Frame", {BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 40), Parent = window})
-mk("TextLabel", {Text = "AIO Farm Hub - V.Max Turbo (Zero Delay)", Font = Enum.Font.GothamBold, TextSize = 15, TextColor3 = Color3.fromRGB(240,240,240), BackgroundTransparency = 1, Position = UDim2.new(0, 15, 0, 0), Size = UDim2.new(0, 400, 1, 0), TextXAlignment = Enum.TextXAlignment.Left, Parent = top})
+mk("TextLabel", {Text = "AIO Farm Hub - V.Max Turbo (Perfect Timing)", Font = Enum.Font.GothamBold, TextSize = 15, TextColor3 = Color3.fromRGB(240,240,240), BackgroundTransparency = 1, Position = UDim2.new(0, 15, 0, 0), Size = UDim2.new(0, 400, 1, 0), TextXAlignment = Enum.TextXAlignment.Left, Parent = top})
 local minBtn = mk("TextButton", {Text = "-", Font=Enum.Font.GothamBold, TextSize=22, TextColor3=Color3.fromRGB(150,150,150), BackgroundTransparency=1, AnchorPoint=Vector2.new(1,0.5), Position=UDim2.new(1,-12,0.5,0), Size=UDim2.fromOffset(30,30), Parent=top})
 mk("Frame", {BackgroundColor3 = Color3.fromRGB(65,65,65), BorderSizePixel=0, Position=UDim2.new(0,0,0,40), Size=UDim2.new(1,0,0,1), Parent=window})
 
@@ -193,11 +193,11 @@ local function fireTargetPrompt(prompt)
         if fireproximityprompt then fireproximityprompt(prompt, 1, true) end
         pcall(function()
             prompt:InputHoldBegin()
-            task.delay(prompt.HoldDuration > 0 and prompt.HoldDuration or 0.05, function()
+            task.delay(prompt.HoldDuration > 0 and prompt.HoldDuration or 0.1, function()
                 prompt:InputHoldEnd()
             end)
         end)
-        task.wait(0.05)
+        task.wait(0.1)
         prompt.RequiresLineOfSight = oldLOS
         prompt.MaxActivationDistance = oldDist
     end
@@ -226,7 +226,7 @@ local function forceClick(guiObject)
 end
 
 task.spawn(function()
-    while task.wait(0.03) do -- กวาดล้างเร็วจัด
+    while task.wait(0.03) do
         pcall(function()
             for _, gui in pairs(lp.PlayerGui:GetChildren()) do
                 if gui:IsA("ScreenGui") and gui.Enabled and gui.Name ~= "UniversalLuaRBX" then
@@ -267,7 +267,7 @@ end)
 
 
 -- ==========================================
--- 🎰 สุ่มกาชา (คอลัมน์ 1 - ระบบเทอร์โบ 3 พิกัด สุ่ม->ขาย->บ้าน)
+-- 🎰 สุ่มกาชา (คอลัมน์ 1 - ระบบ 3 พิกัด สุ่ม->ขาย->บ้าน ปรับดีเลย์สมดุล)
 -- ==========================================
 createHeader(col1, "🎰 สุ่มกาชา (ฟาร์มสัตว์เลี้ยง)")
 _G.AutoSpinGacha = false
@@ -300,7 +300,7 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
     if not state then releaseLock() end 
     
     if state then
-        sendNotify("Ghost Spin Turbo", "โหมดความเร็วสูงสุดทำงาน!")
+        sendNotify("Ghost Spin", "โหมด Perfect Timing ทำงาน!")
         task.spawn(function()
             local bglEvent = ReplicatedStorage:WaitForChild("BGLRecycleEvent", 5)
             
@@ -318,7 +318,7 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                     end
                 end)
                 
-                -- สแกนกระเป๋าแบบไว
+                -- สแกนกระเป๋า
                 local uiBagCount = 0
                 pcall(function()
                     for _, gui in pairs(lp.PlayerGui:GetDescendants()) do
@@ -345,7 +345,7 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                 
                 if shouldSell then
                     -- ==========================
-                    -- 💰 โหมดขายของ TURBO
+                    -- 💰 โหมดขายของ
                     -- ==========================
                     if not _G.SellPlaceArgs then
                         sendNotify("หาจุดขายไม่เจอ!", "โปรดตั้งพิกัดจุดขาย (ปุ่ม 2) ก่อนเริ่ม")
@@ -357,7 +357,7 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                     if lp.Character and lp.Character.PrimaryPart then
                         lp.Character:PivotTo(CFrame.new(sPos + Vector3.new(0, 3, 0)))
                         lp.Character.PrimaryPart.Velocity = Vector3.new(0,0,0)
-                        task.wait(0.1) -- ลดดีเลย์วาร์ป
+                        task.wait(0.5) -- *เพิ่มดีเลย์รอเกมโหลด 0.5 วิ*
                     end
 
                     local sellPrompt = nil
@@ -383,13 +383,13 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                         if pPos and lp.Character and lp.Character.PrimaryPart then
                             lp.Character:PivotTo(CFrame.new(pPos + Vector3.new(0, 2, 0)))
                             lp.Character.PrimaryPart.Velocity = Vector3.new(0,0,0)
-                            task.wait(0.05) -- ลดดีเลย์ประชิดปุ่ม
+                            task.wait(0.2)
                         end
                         
                         local sellRemote = sellPrompt:FindFirstChild("RecycleSellRemote") or sellPrompt.Parent:FindFirstChild("RecycleSellRemote", true)
                         if sellRemote then
                             fireTargetPrompt(sellPrompt)
-                            task.wait(0.05)
+                            task.wait(0.2)
                             pcall(function() sellRemote:FireServer("SellAll") end)
                         else
                             for _, obj in pairs(workspace:GetDescendants()) do
@@ -398,7 +398,7 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                                 end
                             end
                         end
-                        task.wait(0.05) 
+                        task.wait(0.2) 
                         pcall(function() ReplicatedStorage:WaitForChild("BagRemotes", 2):WaitForChild("GetState", 2):InvokeServer() end)
                         _G.IsBagFull_ServerSignal = false
                         sendNotify("Recycle Sold", "ขายของสำเร็จ! วาร์ปกลับบ้าน")
@@ -412,10 +412,10 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                     end
                     
                     releaseLock()
-                    task.wait(0.1) -- ลดดีเลย์พักเครื่องหลังขาย
+                    task.wait(0.2)
                 else
                     -- ==========================
-                    -- 🎰 โหมดสุ่มสปิน TURBO
+                    -- 🎰 โหมดสุ่มสปิน 
                     -- ==========================
                     if not _G.SpinPlaceArgs then
                         sendNotify("หาจุดสุ่มไม่เจอ!", "โปรดตั้งพิกัดจุดสุ่ม (ปุ่ม 1) ก่อนเริ่ม")
@@ -427,7 +427,7 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                     if lp.Character and lp.Character.PrimaryPart then
                         lp.Character:PivotTo(CFrame.new(spinPos + Vector3.new(0, 3, 0)))
                         lp.Character.PrimaryPart.Velocity = Vector3.new(0,0,0)
-                        task.wait(0.1) -- ลดดีเลย์วาร์ป
+                        task.wait(0.5) -- *เพิ่มดีเลย์รอเซิร์ฟเวอร์เช็คตำแหน่งตัวละคร 0.5 วิ*
                     end
                     
                     local spinPrompt = nil
@@ -450,7 +450,7 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                     
                     if spinPrompt then
                         fireTargetPrompt(spinPrompt)
-                        task.wait(0.05) -- ลดดีเลย์กดตู้
+                        task.wait(0.2)
                     end
 
                     if bglEvent then
@@ -465,7 +465,7 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                     
                     releaseLock()
                     sendNotify("Cooldown Started", "สุ่มเสร็จแล้ว! รอคูลดาวน์ 62 วินาที")
-                    task.wait(62) -- ห้ามลด! อันนี้คือเวลาเซิร์ฟเวอร์
+                    task.wait(62) 
                 end
             end
         end)
@@ -534,9 +534,9 @@ createSwitch(col2, "เริ่มออโต้แดก (ซื้อ+กิ
                                         getLock()
                                         lp.Character:PivotTo(CFrame.new(pPos + Vector3.new(0, 3, 0)))
                                         if lp.Character.PrimaryPart then lp.Character.PrimaryPart.Velocity = Vector3.new(0,0,0) end
-                                        task.wait(0.02) 
-                                        fireTargetPrompt(prompt)
                                         task.wait(0.05) 
+                                        fireTargetPrompt(prompt)
+                                        task.wait(0.1) 
                                         if eatRemote then pcall(function() eatRemote:InvokeServer(); eatRemote:InvokeServer() end) end
                                         releaseLock()
                                         break 
