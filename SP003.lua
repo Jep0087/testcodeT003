@@ -1,4 +1,4 @@
---// Universal LuaRBX - Thai Edition (AIO: V.Max Turbo - Auto Aim & Smart Timing)
+--// Universal LuaRBX - Thai Edition (AIO: V.Max Turbo - Instant Interact Integration)
 --// Keybind เปิด/ปิดเมนู: J
 
 -- ==========================================
@@ -24,6 +24,7 @@ local RunService = game:GetService("RunService")
 local SoundService = game:GetService("SoundService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local VirtualUser = game:GetService("VirtualUser")
+local ProximityPromptService = game:GetService("ProximityPromptService")
 
 local lp = Players.LocalPlayer
 local pg = lp:WaitForChild("PlayerGui")
@@ -31,6 +32,16 @@ local pg = lp:WaitForChild("PlayerGui")
 if pg:FindFirstChild("UniversalLuaRBX") then pg.UniversalLuaRBX:Destroy() end
 
 local CURRENT = {Accent = Color3.fromRGB(85, 255, 127), Bg = Color3.fromRGB(25, 25, 25)}
+
+-- ==========================================
+-- ⚡ ระบบ Instant Interact (ทะลวงหลอดโหลด 0 วิ)
+-- ==========================================
+ProximityPromptService.PromptButtonHoldBegan:Connect(function(prompt, player)
+    -- ถ้าคนที่กดคือตัวเรา ให้บังคับปุ่มทำงานเสร็จสมบูรณ์ทันที
+    if player == lp and fireproximityprompt then
+        pcall(function() fireproximityprompt(prompt) end)
+    end
+end)
 
 -- ==========================================
 -- 📡 ระบบดักฟัง Server
@@ -87,12 +98,12 @@ local function playClick()
 end
 
 -- ==========================================
--- 🖥️ ระบบ UI
+-- 🖥️ ระบบ UI (Compact Mode)
 -- ==========================================
 local gui = mk("ScreenGui", { Name = "UniversalLuaRBX", ResetOnSpawn = false, IgnoreGuiInset = true, Parent = pg })
 
 local notifyContainer = mk("Frame", {Name = "Notify", AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -20, 1, -50), Size = UDim2.new(0, 250, 0, 400), BackgroundTransparency = 1, Parent = gui, ZIndex=10})
-mk("UIListLayout", {Parent=notifyContainer, VerticalAlignment=Enum.VerticalAlignment.Bottom, Padding=UDim.new(0,10)})
+mk("UIListLayout", {Parent=notifyContainer, VerticalAlignment=Enum.VerticalAlignment.Bottom, Padding=UDim.new(0,8)})
 
 local function sendNotify(title, msg)
     local f = mk("Frame", {BackgroundColor3 = Color3.fromRGB(20,20,20), Size = UDim2.new(1,0,0,0), ClipsDescendants = true, Parent = notifyContainer})
@@ -104,12 +115,12 @@ local function sendNotify(title, msg)
     task.delay(3, function() if f then local out = tween(f, {Size = UDim2.new(1,0,0,0), BackgroundTransparency=1}, 0.3) out.Completed:Connect(function() f:Destroy() end) end end)
 end
 
-local window = mk("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(920, 480), BackgroundColor3 = CURRENT.Bg, BackgroundTransparency = 0.02, Active = true, ClipsDescendants = true, Parent = gui })
+local window = mk("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(860, 420), BackgroundColor3 = CURRENT.Bg, BackgroundTransparency = 0.02, Active = true, ClipsDescendants = true, Parent = gui })
 mk("UICorner", {Parent=window, CornerRadius=UDim.new(0,10)})
 mk("UIStroke", {Parent=window, Color=Color3.fromRGB(65,65,65), Thickness=1, Transparency=0.4})
 
 local top = mk("Frame", {BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 40), Parent = window})
-mk("TextLabel", {Text = "AIO Farm Hub - V.Max Turbo (Auto Aim)", Font = Enum.Font.GothamBold, TextSize = 15, TextColor3 = Color3.fromRGB(240,240,240), BackgroundTransparency = 1, Position = UDim2.new(0, 15, 0, 0), Size = UDim2.new(0, 400, 1, 0), TextXAlignment = Enum.TextXAlignment.Left, Parent = top})
+mk("TextLabel", {Text = "AIO Farm Hub - V.Max Turbo (Instant Interact)", Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = Color3.fromRGB(240,240,240), BackgroundTransparency = 1, Position = UDim2.new(0, 15, 0, 0), Size = UDim2.new(0, 400, 1, 0), TextXAlignment = Enum.TextXAlignment.Left, Parent = top})
 local minBtn = mk("TextButton", {Text = "-", Font=Enum.Font.GothamBold, TextSize=22, TextColor3=Color3.fromRGB(150,150,150), BackgroundTransparency=1, AnchorPoint=Vector2.new(1,0.5), Position=UDim2.new(1,-12,0.5,0), Size=UDim2.fromOffset(30,30), Parent=top})
 mk("Frame", {BackgroundColor3 = Color3.fromRGB(65,65,65), BorderSizePixel=0, Position=UDim2.new(0,0,0,40), Size=UDim2.new(1,0,0,1), Parent=window})
 
@@ -121,17 +132,17 @@ UserInputService.InputBegan:Connect(function(i, gp) if not gp and i.KeyCode == E
 
 minBtn.MouseButton1Click:Connect(function()
     playClick()
-    if window.Size.Y.Offset > 40 then tween(window, {Size = UDim2.fromOffset(920, 40)}, 0.3) minBtn.Text = "+"
-    else tween(window, {Size = UDim2.fromOffset(920, 480)}, 0.3) minBtn.Text = "-" end
+    if window.Size.Y.Offset > 40 then tween(window, {Size = UDim2.fromOffset(860, 40)}, 0.3) minBtn.Text = "+"
+    else tween(window, {Size = UDim2.fromOffset(860, 420)}, 0.3) minBtn.Text = "-" end
 end)
 
 local content = mk("Frame", {BackgroundTransparency = 1, Position=UDim2.new(0,0,0,41), Size=UDim2.new(1,0,1,-41), Parent=window})
-mk("UIPadding", {Parent=content, PaddingTop=UDim.new(0,15), PaddingLeft=UDim.new(0,15), PaddingRight=UDim.new(0,15), PaddingBottom=UDim.new(0,15)})
-mk("UIListLayout", {Parent=content, FillDirection=Enum.FillDirection.Horizontal, SortOrder=Enum.SortOrder.LayoutOrder, Padding=UDim.new(0,15)})
+mk("UIPadding", {Parent=content, PaddingTop=UDim.new(0,10), PaddingLeft=UDim.new(0,10), PaddingRight=UDim.new(0,10), PaddingBottom=UDim.new(0,10)})
+mk("UIListLayout", {Parent=content, FillDirection=Enum.FillDirection.Horizontal, SortOrder=Enum.SortOrder.LayoutOrder, Padding=UDim.new(0,10)})
 
 local function createColumn(parent)
-    local col = mk("ScrollingFrame", {BackgroundTransparency=1, Size=UDim2.new(0.333, -10, 1, 0), CanvasSize=UDim2.new(0,0,0,0), AutomaticCanvasSize=Enum.AutomaticSize.Y, ScrollBarThickness=2, ScrollBarImageColor3=Color3.fromRGB(100,100,100), BorderSizePixel=0, Parent=parent})
-    mk("UIListLayout", {Parent=col, SortOrder=Enum.SortOrder.LayoutOrder, Padding=UDim.new(0,8)})
+    local col = mk("ScrollingFrame", {BackgroundTransparency=1, Size=UDim2.new(0.333, -7, 1, 0), CanvasSize=UDim2.new(0,0,0,0), AutomaticCanvasSize=Enum.AutomaticSize.Y, ScrollBarThickness=2, ScrollBarImageColor3=Color3.fromRGB(100,100,100), BorderSizePixel=0, Parent=parent})
+    mk("UIListLayout", {Parent=col, SortOrder=Enum.SortOrder.LayoutOrder, Padding=UDim.new(0,6)})
     mk("UIPadding", {Parent=col, PaddingRight=UDim.new(0, 5)})
     return col
 end
@@ -141,16 +152,16 @@ local col2 = createColumn(content)
 local col3 = createColumn(content)
 
 local function createHeader(parent, text)
-    local f = mk("Frame", {BackgroundTransparency=1, Size=UDim2.new(1,0,0,25), Parent=parent})
-    mk("TextLabel", {Text=text, Font=Enum.Font.GothamBold, TextSize=14, TextColor3=CURRENT.Accent, BackgroundTransparency=1, Size=UDim2.new(1,0,1,0), TextXAlignment=Enum.TextXAlignment.Left, Parent=f})
+    local f = mk("Frame", {BackgroundTransparency=1, Size=UDim2.new(1,0,0,22), Parent=parent})
+    mk("TextLabel", {Text=text, Font=Enum.Font.GothamBold, TextSize=13, TextColor3=CURRENT.Accent, BackgroundTransparency=1, Size=UDim2.new(1,0,1,0), TextXAlignment=Enum.TextXAlignment.Left, Parent=f})
     mk("Frame", {BackgroundColor3=CURRENT.Accent, BackgroundTransparency=0.7, BorderSizePixel=0, AnchorPoint=Vector2.new(0,1), Position=UDim2.new(0,0,1,-2), Size=UDim2.new(1,0,0,1), Parent=f})
 end
 
 local function createSwitch(parent, text, subText, callback, isDefaultOn)
-    local c = mk("Frame", {BackgroundColor3 = Color3.fromRGB(40,40,40), Size=UDim2.new(1,0,0,48), Parent=parent})
+    local c = mk("Frame", {BackgroundColor3 = Color3.fromRGB(40,40,40), Size=UDim2.new(1,0,0,44), Parent=parent})
     mk("UICorner", {Parent=c, CornerRadius=UDim.new(0,8)})
-    mk("TextLabel", {Text = text, Font=Enum.Font.GothamMedium, TextSize=12, TextColor3=Color3.fromRGB(240,240,240), BackgroundTransparency=1, Position=UDim2.new(0,12,0,8), Size=UDim2.new(0.7,0,0,15), TextXAlignment=Enum.TextXAlignment.Left, Parent=c})
-    if subText then mk("TextLabel", {Text = subText, Font=Enum.Font.Gotham, TextSize=10, TextColor3=Color3.fromRGB(150,150,150), BackgroundTransparency=1, Position=UDim2.new(0,12,0,25), Size=UDim2.new(0.7,0,0,15), TextXAlignment=Enum.TextXAlignment.Left, Parent=c}) end
+    mk("TextLabel", {Text = text, Font=Enum.Font.GothamMedium, TextSize=12, TextColor3=Color3.fromRGB(240,240,240), BackgroundTransparency=1, Position=UDim2.new(0,12,0,6), Size=UDim2.new(0.7,0,0,14), TextXAlignment=Enum.TextXAlignment.Left, Parent=c})
+    if subText then mk("TextLabel", {Text = subText, Font=Enum.Font.Gotham, TextSize=10, TextColor3=Color3.fromRGB(150,150,150), BackgroundTransparency=1, Position=UDim2.new(0,12,0,22), Size=UDim2.new(0.7,0,0,14), TextXAlignment=Enum.TextXAlignment.Left, Parent=c}) end
     local on = isDefaultOn or false
     local bgCol = on and CURRENT.Accent or Color3.fromRGB(60,60,60)
     local circPos = on and UDim2.new(1, -17, 0.5, 0) or UDim2.new(0, 3, 0.5, 0)
@@ -167,12 +178,30 @@ local function createSwitch(parent, text, subText, callback, isDefaultOn)
 end
 
 local function createInput(parent, text, defaultVal, callback)
-    local c = mk("Frame", {BackgroundColor3 = Color3.fromRGB(40,40,40), Size=UDim2.new(1,0,0,40), Parent=parent})
+    local c = mk("Frame", {BackgroundColor3 = Color3.fromRGB(40,40,40), Size=UDim2.new(1,0,0,38), Parent=parent})
     mk("UICorner", {Parent=c, CornerRadius=UDim.new(0,8)})
     mk("TextLabel", {Text=text, Font=Enum.Font.GothamMedium, TextSize=12, TextColor3=Color3.fromRGB(240,240,240), BackgroundTransparency=1, Position=UDim2.new(0,12,0,0), Size=UDim2.new(0.4,0,1,0), TextXAlignment=Enum.TextXAlignment.Left, Parent=c})
     local box = mk("TextBox", {Text=defaultVal, Font=Enum.Font.GothamBold, TextSize=11, TextColor3=Color3.fromRGB(20,20,20), BackgroundColor3=CURRENT.Accent, Size=UDim2.new(0,130,0,24), AnchorPoint=Vector2.new(1,0.5), Position=UDim2.new(1,-12,0.5,0), Parent=c})
     mk("UICorner", {Parent=box, CornerRadius=UDim.new(0,6)})
     box.FocusLost:Connect(function() callback(box.Text) end)
+end
+
+local function createCycle(parent, text, items, callback)
+    local c = mk("Frame", {BackgroundColor3 = Color3.fromRGB(40,40,40), Size=UDim2.new(1,0,0,38), Parent=parent})
+    mk("UICorner", {Parent=c, CornerRadius=UDim.new(0,8)})
+    mk("TextLabel", {Text=text, Font=Enum.Font.GothamMedium, TextSize=12, TextColor3=Color3.fromRGB(240,240,240), BackgroundTransparency=1, Position=UDim2.new(0,12,0,0), Size=UDim2.new(0.4,0,1,0), TextXAlignment=Enum.TextXAlignment.Left, Parent=c})
+    
+    local btn = mk("TextButton", {Text=items[1].name, Font=Enum.Font.GothamBold, TextSize=11, TextColor3=Color3.fromRGB(20,20,20), BackgroundColor3=CURRENT.Accent, Size=UDim2.new(0,135,0,24), AnchorPoint=Vector2.new(1,0.5), Position=UDim2.new(1,-10,0.5,0), Parent=c})
+    mk("UICorner", {Parent=btn, CornerRadius=UDim.new(0,6)})
+    
+    local idx = 1
+    btn.MouseButton1Click:Connect(function()
+        playClick()
+        idx = idx + 1
+        if idx > #items then idx = 1 end
+        btn.Text = items[idx].name
+        callback(items[idx].id)
+    end)
 end
 
 local function createButton(parent, text, callback)
@@ -190,14 +219,18 @@ local function fireTargetPrompt(prompt)
         prompt.RequiresLineOfSight = false
         prompt.MaxActivationDistance = 99999
         prompt.Enabled = true
-        if fireproximityprompt then fireproximityprompt(prompt, 1, true) end
+        
+        -- ยิงคำสั่งตรงๆ ก่อน 1 ที (เผื่อ executor บางตัวชอบแบบนี้)
+        if fireproximityprompt then pcall(function() fireproximityprompt(prompt) end) end
+        
+        -- แตะปุ่มเบาๆ 0.01 วิ เพื่อไปกระตุ้น Event ตัวบนให้ส่ง fireproximityprompt() ซ้ำอีกรอบแบบชัวร์ๆ
         pcall(function()
             prompt:InputHoldBegin()
-            task.delay(prompt.HoldDuration > 0 and prompt.HoldDuration or 0.1, function()
-                prompt:InputHoldEnd()
-            end)
+            task.wait(0.01)
+            prompt:InputHoldEnd()
         end)
-        task.wait(0.1)
+        
+        task.wait(0.05)
         prompt.RequiresLineOfSight = oldLOS
         prompt.MaxActivationDistance = oldDist
     end
@@ -213,7 +246,7 @@ local function getPromptPos(prompt)
 end
 
 -- ==========================================
--- 🛠️ ระบบกวาดล้าง UI นิวเคลียร์ล้างบาง
+-- 🛠️ ระบบกวาดล้าง UI นิวเคลียร์ล้างบาง (ความเร็ว 0.03 วิ)
 -- ==========================================
 local function forceClick(guiObject)
     if getconnections then
@@ -267,7 +300,7 @@ end)
 
 
 -- ==========================================
--- 🎰 สุ่มกาชา (คอลัมน์ 1 - ระบบเทอร์โบ 3 พิกัด สุ่ม->ขาย->บ้าน พร้อม AUTO-AIM)
+-- 🎰 สุ่มกาชา (คอลัมน์ 1 - ระบบ 3 พิกัด สุ่ม->ขาย->บ้าน ปรับดีเลย์สมดุล)
 -- ==========================================
 createHeader(col1, "🎰 สุ่มกาชา (ฟาร์มสัตว์เลี้ยง)")
 _G.AutoSpinGacha = false
@@ -289,18 +322,18 @@ createButton(col1, "💰 2. ตั้งพิกัดจุดขาย (ย�
 end)
 
 createButton(col1, "🏠 3. ตั้งพิกัดบ้าน (ยืนข้างสัตว์เลี้ยง)", function()
-    if lp.Character and lp.Character.PrimaryPart then
+    if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
         _G.HomePlaceArgs = lp.Character.PrimaryPart.CFrame
         sendNotify("สำเร็จ!", "บันทึกพิกัด 'บ้าน' เรียบร้อย!")
     end
 end)
 
-createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ", "มี Auto-Aim หันหน้าล็อกเป้าอัตโนมัติ", function(state)
+createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ", "ทะลวงปุ่ม 0 วิ (สุ่ม->ขาย->ฟาร์ม)", function(state)
     _G.AutoSpinGacha = state
     if not state then releaseLock() end 
     
     if state then
-        sendNotify("Ghost Spin Turbo", "โหมด Auto-Aim ทำงาน ล็อกเป้าแม่นๆ!")
+        sendNotify("Ghost Spin", "โหมด Instant Interact ทำงาน!")
         task.spawn(function()
             local bglEvent = ReplicatedStorage:WaitForChild("BGLRecycleEvent", 5)
             
@@ -309,6 +342,7 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                 local hasFullText = false
                 local safeZoneCFrame = _G.HomePlaceArgs or (lp.Character and lp.Character.PrimaryPart and lp.Character.PrimaryPart.CFrame)
                 
+                -- ซ่อน UI ถาวร
                 pcall(function()
                     local ui = lp.PlayerGui:FindFirstChild("Random-items")
                     if ui and ui:FindFirstChild("RecycleUI") then
@@ -317,6 +351,7 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                     end
                 end)
                 
+                -- สแกนกระเป๋า
                 local uiBagCount = 0
                 pcall(function()
                     for _, gui in pairs(lp.PlayerGui:GetDescendants()) do
@@ -343,7 +378,7 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                 
                 if shouldSell then
                     -- ==========================
-                    -- 💰 โหมดขายของ (Auto-Aim)
+                    -- 💰 โหมดขายของ
                     -- ==========================
                     if not _G.SellPlaceArgs then
                         sendNotify("หาจุดขายไม่เจอ!", "โปรดตั้งพิกัดจุดขาย (ปุ่ม 2) ก่อนเริ่ม")
@@ -355,7 +390,7 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                     if lp.Character and lp.Character.PrimaryPart then
                         lp.Character:PivotTo(CFrame.new(sPos + Vector3.new(0, 3, 0)))
                         lp.Character.PrimaryPart.Velocity = Vector3.new(0,0,0)
-                        task.wait(0.1)
+                        task.wait(0.5) 
                     end
 
                     local sellPrompt = nil
@@ -379,11 +414,9 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                     if sellPrompt then
                         local pPos = getPromptPos(sellPrompt)
                         if pPos and lp.Character and lp.Character.PrimaryPart then
-                            -- Auto-Aim: วาร์ปไปจุดขาย + บังคับหันหน้าเข้าหาจอคอมเป๊ะๆ
-                            local charPos = pPos + Vector3.new(0, 2, 0)
-                            lp.Character:PivotTo(CFrame.new(charPos, Vector3.new(pPos.X, charPos.Y, pPos.Z)))
+                            lp.Character:PivotTo(CFrame.new(pPos + Vector3.new(0, 2, 0)))
                             lp.Character.PrimaryPart.Velocity = Vector3.new(0,0,0)
-                            task.wait(0.15) -- ให้เกมตั้งสติว่าเราหันหน้ามองแล้ว
+                            task.wait(0.1)
                         end
                         
                         local sellRemote = sellPrompt:FindFirstChild("RecycleSellRemote") or sellPrompt.Parent:FindFirstChild("RecycleSellRemote", true)
@@ -402,6 +435,8 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                         pcall(function() ReplicatedStorage:WaitForChild("BagRemotes", 2):WaitForChild("GetState", 2):InvokeServer() end)
                         _G.IsBagFull_ServerSignal = false
                         sendNotify("Recycle Sold", "ขายของสำเร็จ! วาร์ปกลับบ้าน")
+                    else
+                        sendNotify("หาจุดขายไม่เจอ!", "ไม่พบปุ่ม SELL บริเวณพิกัดที่ตั้งไว้")
                     end
                     
                     if safeZoneCFrame and lp.Character and lp.Character.PrimaryPart then
@@ -410,10 +445,10 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                     end
                     
                     releaseLock()
-                    task.wait(0.1) 
+                    task.wait(0.2)
                 else
                     -- ==========================
-                    -- 🎰 โหมดสุ่มสปิน (Auto-Aim)
+                    -- 🎰 โหมดสุ่มสปิน 
                     -- ==========================
                     if not _G.SpinPlaceArgs then
                         sendNotify("หาจุดสุ่มไม่เจอ!", "โปรดตั้งพิกัดจุดสุ่ม (ปุ่ม 1) ก่อนเริ่ม")
@@ -425,7 +460,7 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                     if lp.Character and lp.Character.PrimaryPart then
                         lp.Character:PivotTo(CFrame.new(spinPos + Vector3.new(0, 3, 0)))
                         lp.Character.PrimaryPart.Velocity = Vector3.new(0,0,0)
-                        task.wait(0.1) 
+                        task.wait(0.5) 
                     end
                     
                     local spinPrompt = nil
@@ -447,14 +482,6 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                     end
                     
                     if spinPrompt then
-                        local pPos = getPromptPos(spinPrompt)
-                        if pPos and lp.Character and lp.Character.PrimaryPart then
-                            -- Auto-Aim: บังคับตัวละครให้ "จ้องตา" กับตู้สุ่ม
-                            local charPos = spinPos + Vector3.new(0, 3, 0)
-                            lp.Character:PivotTo(CFrame.new(charPos, Vector3.new(pPos.X, charPos.Y, pPos.Z)))
-                            lp.Character.PrimaryPart.Velocity = Vector3.new(0,0,0)
-                            task.wait(0.15) -- เพิ่มเวลาให้เกมรับรู้ทิศทางการหันหน้า
-                        end
                         fireTargetPrompt(spinPrompt)
                         task.wait(0.1)
                     end
@@ -491,6 +518,7 @@ local function checkIsRealFood(prompt)
     local actText = string.upper(tostring(prompt.ActionText or ""))
     local objText = string.upper(tostring(prompt.ObjectText or ""))
     local pName = string.upper(tostring(prompt.Name or ""))
+    local fullText = actText .. "|" .. objText .. "|" .. pName
     
     if not (fullText:find("BUY") or fullText:find("ซื้อ")) then return false end
     
@@ -513,7 +541,7 @@ local function checkIsRealFood(prompt)
     return isFood
 end
 
-createSwitch(col2, "เริ่มออโต้แดก (ซื้อ+กิน)", "สแกนของกิน 100% บล็อกทุกสิ่งที่ไม่ใช่อาหาร", function(state)
+createSwitch(col2, "เริ่มออโต้แดก (ซื้อ+กิน)", "สแกนของกิน 100% บล็อกสิ่งที่ไม่ใช่อาหาร", function(state)
     _G.AutoBuyEat = state
     if not state then releaseLock() end 
 
@@ -591,9 +619,15 @@ end)
 -- 🍳 ออโต้ทำอาหาร (คอลัมน์ 3)
 -- ==========================================
 createHeader(col3, "🍳 ออโต้ทำอาหาร (Auto Cook)")
-local uiFoodName = "Food-spicy-prawn-soup" 
+local uiFoodName = "Food-omelet" 
 local uiSaleMode = "Online"
 _G.AutoFood = false
+
+-- หั่นเมนูให้เหลือแค่ 2 อันที่ต้องการเป๊ะๆ ห้ามมั่ว
+local foodOptions = {
+    {name = "ข้าวไข่เจียวหมูสับ", id = "Food-omelet"},
+    {name = "ต้มยำกุ้ง", id = "Food-spicy-prawn-soup"}
+}
 
 createButton(col3, "📍 ตั้งจุดวางจานตรงที่ยืนอยู่", function()
     local char = lp.Character
@@ -617,7 +651,8 @@ createButton(col3, "📍 ตั้งจุดวางจานตรงที�
     end
 end)
 
-createInput(col3, "รหัสเมนู", uiFoodName, function(val) uiFoodName = val end)
+createCycle(col3, "เมนูอาหาร (กดเพื่อเปลี่ยน)", foodOptions, function(val) uiFoodName = val end)
+
 createSwitch(col3, "โหมดขาย (เปิด=Online)", "ค่าเริ่มต้นคือ Online อัตโนมัติ", function(state)
     if state then uiSaleMode = "Online" else uiSaleMode = "Villagers" end
 end, true)
