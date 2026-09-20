@@ -1,4 +1,4 @@
---// Universal LuaRBX - Thai Edition (AIO: V.Max Final - 3 Waypoints & Pet Farm)
+--// Universal LuaRBX - Thai Edition (AIO: V.Max Final - 3 Waypoints & Ultra Clean UI Fix)
 --// Keybind เปิด/ปิดเมนู: J
 
 -- ==========================================
@@ -9,10 +9,9 @@ _G.FoodPlaceArgs = {
     [4] = 1, [5] = 0, [6] = 0, [7] = 0, [8] = 1, [9] = 0, [10] = 0, [11] = 0, [12] = 1
 }
 
-_G.SpinPlaceArgs = nil -- พิกัดสำหรับสุ่มขยะ
-_G.SellPlaceArgs = nil -- พิกัดสำหรับหน้าจอคอมขายของ
-_G.HomePlaceArgs = nil -- พิกัดบ้านสำหรับยืนให้สัตว์เลี้ยงฟาร์ม
-
+_G.SpinPlaceArgs = nil 
+_G.SellPlaceArgs = nil 
+_G.HomePlaceArgs = nil 
 _G.BotActionLock = false 
 _G.IgnoreMyFood = true 
 _G.AntiAFK = false
@@ -214,19 +213,41 @@ local function getPromptPos(prompt)
 end
 
 -- ==========================================
--- 🛠️ ระบบกวาดล้าง UI รบกวน
+-- 🛠️ ระบบกวาดล้าง UI รบกวน (อัปเดตแก้อาการ ITEM COLLECTED บังจอ 100%)
 -- ==========================================
 task.spawn(function()
-    while task.wait(0.2) do
+    while task.wait(0.1) do -- เพิ่มความเร็วการสแกนเป็น 0.1 วินาที
         pcall(function()
             for _, gui in pairs(lp.PlayerGui:GetChildren()) do
                 if gui:IsA("ScreenGui") and gui.Enabled and gui.Name ~= "UniversalLuaRBX" then
                     local hideGui = false
                     for _, desc in pairs(gui:GetDescendants()) do
                         if (desc:IsA("TextButton") or desc:IsA("TextLabel") or desc:IsA("ImageButton")) and desc.Visible then
-                            local txt = desc:IsA("TextLabel") and tostring(desc.Text) or (desc:IsA("TextButton") and tostring(desc.Text) or "")
+                            local txtStr = tostring(desc.Text)
+                            local txtUpper = string.upper(txtStr)
                             
-                            if txt == "ปิด" or txt == "Close" or txt:find("ITEM COLLECTED") or txt:find("คลิกที่ใดก็ได้เพื่อปิด") then
+                            -- รองรับการปิด ITEM COLLECTED ทั้งภาษาไทยและอังกฤษแบบเจาะจง
+                            if txtUpper:find("ITEM COLLECTED") or txtStr:find("คลิกที่ใดก็ได้เพื่อปิด") or txtUpper:find("CLICK ANYWHERE TO CLOSE") then
+                                -- ล่องหน Frame 
+                                local p = desc.Parent
+                                for i=1, 6 do
+                                    if p and (p:IsA("Frame") or p:IsA("ImageLabel")) then p.Visible = false end
+                                    if p then p = p.Parent end
+                                end
+                                
+                                -- จำลองการคลิกปิดเพื่อไม่ให้เกมค้าง
+                                local bgBtn = desc.Parent:FindFirstChildWhichIsA("TextButton", true) or (desc.Parent.Parent and desc.Parent.Parent:FindFirstChildWhichIsA("TextButton", true))
+                                if bgBtn and getconnections then
+                                    for _, conn in pairs(getconnections(bgBtn.MouseButton1Click)) do pcall(function() conn:Fire() end) end
+                                end
+                                
+                                -- สั่งปิดตัว ScreenGui เลยถ้าไม่ใช่หน้าต่างสุ่มหลัก
+                                if not string.lower(gui.Name):find("random%-items") then
+                                    hideGui = true
+                                end
+                            end
+                            
+                            if txtUpper == "ปิด" or txtUpper == "CLOSE" then
                                 hideGui = true
                                 local clickTarget = desc:IsA("TextButton") and desc or desc.Parent
                                 if clickTarget and clickTarget:IsA("TextButton") and getconnections then
@@ -234,7 +255,7 @@ task.spawn(function()
                                 end
                             end
                             
-                            if txt:find("เอ๊ะ! มีของเก่ามาขายไหม") or txt:find("สิ่งนี้มีค่าเท่าไหร่ตอนนี่") or txt:find("1.) ขายทั้งหมด") then
+                            if txtStr:find("เอ๊ะ! มีของเก่ามาขายไหม") or txtStr:find("สิ่งนี้มีค่าเท่าไหร่ตอนนี่") or txtStr:find("1.) ขายทั้งหมด") then
                                 hideGui = true
                             end
                         end
@@ -257,7 +278,7 @@ end)
 createHeader(col1, "🎰 สุ่มกาชา (ฟาร์มสัตว์เลี้ยง)")
 _G.AutoSpinGacha = false
 
-createButton(col1, "📍 1. ตั้งพิกัดตู้สุ่ม (ยืนชิดจุดสุ่มแล้วกด)", function()
+createButton(col1, "📍 1. ตั้งพิกัดจุดสุ่ม (ยืนชิดตู้สุ่มแล้วกด)", function()
     if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
         local pos = lp.Character.HumanoidRootPart.Position
         _G.SpinPlaceArgs = {pos.X, pos.Y, pos.Z}
@@ -265,7 +286,7 @@ createButton(col1, "📍 1. ตั้งพิกัดตู้สุ่ม (�
     end
 end)
 
-createButton(col1, "💰 2. ตั้งพิกัดตู้ขาย (ยืนหน้าจอคอมขาย)", function()
+createButton(col1, "💰 2. ตั้งพิกัดจุดขาย (ยืนหน้าจอคอมขาย)", function()
     if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
         local pos = lp.Character.HumanoidRootPart.Position
         _G.SellPlaceArgs = {pos.X, pos.Y, pos.Z}
@@ -294,10 +315,8 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                 local shouldSell = _G.IsBagFull_ServerSignal 
                 local hasFullText = false
                 
-                -- ดึงพิกัดบ้าน (ถ้าไม่ได้ตั้ง จะใช้จุดยืนล่าสุดเป็นบ้าน)
                 local safeZoneCFrame = _G.HomePlaceArgs or (lp.Character and lp.Character.PrimaryPart and lp.Character.PrimaryPart.CFrame)
                 
-                -- ซ่อน UI แอนิเมชันออกนอกจอ
                 pcall(function()
                     local ui = lp.PlayerGui:FindFirstChild("Random-items")
                     if ui and ui:FindFirstChild("RecycleUI") then
