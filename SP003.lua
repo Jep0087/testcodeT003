@@ -1,4 +1,4 @@
---// Universal LuaRBX - Thai Edition (AIO: V.Max Turbo - Perfect Timing Fix)
+--// Universal LuaRBX - Thai Edition (AIO: V.Max Turbo - Auto Aim & Smart Timing)
 --// Keybind เปิด/ปิดเมนู: J
 
 -- ==========================================
@@ -109,7 +109,7 @@ mk("UICorner", {Parent=window, CornerRadius=UDim.new(0,10)})
 mk("UIStroke", {Parent=window, Color=Color3.fromRGB(65,65,65), Thickness=1, Transparency=0.4})
 
 local top = mk("Frame", {BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 40), Parent = window})
-mk("TextLabel", {Text = "AIO Farm Hub - V.Max Turbo (Perfect Timing)", Font = Enum.Font.GothamBold, TextSize = 15, TextColor3 = Color3.fromRGB(240,240,240), BackgroundTransparency = 1, Position = UDim2.new(0, 15, 0, 0), Size = UDim2.new(0, 400, 1, 0), TextXAlignment = Enum.TextXAlignment.Left, Parent = top})
+mk("TextLabel", {Text = "AIO Farm Hub - V.Max Turbo (Auto Aim)", Font = Enum.Font.GothamBold, TextSize = 15, TextColor3 = Color3.fromRGB(240,240,240), BackgroundTransparency = 1, Position = UDim2.new(0, 15, 0, 0), Size = UDim2.new(0, 400, 1, 0), TextXAlignment = Enum.TextXAlignment.Left, Parent = top})
 local minBtn = mk("TextButton", {Text = "-", Font=Enum.Font.GothamBold, TextSize=22, TextColor3=Color3.fromRGB(150,150,150), BackgroundTransparency=1, AnchorPoint=Vector2.new(1,0.5), Position=UDim2.new(1,-12,0.5,0), Size=UDim2.fromOffset(30,30), Parent=top})
 mk("Frame", {BackgroundColor3 = Color3.fromRGB(65,65,65), BorderSizePixel=0, Position=UDim2.new(0,0,0,40), Size=UDim2.new(1,0,0,1), Parent=window})
 
@@ -213,7 +213,7 @@ local function getPromptPos(prompt)
 end
 
 -- ==========================================
--- 🛠️ ระบบกวาดล้าง UI นิวเคลียร์ล้างบาง (ความเร็ว 0.03 วิ)
+-- 🛠️ ระบบกวาดล้าง UI นิวเคลียร์ล้างบาง
 -- ==========================================
 local function forceClick(guiObject)
     if getconnections then
@@ -267,7 +267,7 @@ end)
 
 
 -- ==========================================
--- 🎰 สุ่มกาชา (คอลัมน์ 1 - ระบบ 3 พิกัด สุ่ม->ขาย->บ้าน ปรับดีเลย์สมดุล)
+-- 🎰 สุ่มกาชา (คอลัมน์ 1 - ระบบเทอร์โบ 3 พิกัด สุ่ม->ขาย->บ้าน พร้อม AUTO-AIM)
 -- ==========================================
 createHeader(col1, "🎰 สุ่มกาชา (ฟาร์มสัตว์เลี้ยง)")
 _G.AutoSpinGacha = false
@@ -295,12 +295,12 @@ createButton(col1, "🏠 3. ตั้งพิกัดบ้าน (ยืน�
     end
 end)
 
-createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ", "เทอร์โบวาร์ป 3 จุด (สุ่ม->ขาย->ฟาร์มสัตว์)", function(state)
+createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ", "มี Auto-Aim หันหน้าล็อกเป้าอัตโนมัติ", function(state)
     _G.AutoSpinGacha = state
     if not state then releaseLock() end 
     
     if state then
-        sendNotify("Ghost Spin", "โหมด Perfect Timing ทำงาน!")
+        sendNotify("Ghost Spin Turbo", "โหมด Auto-Aim ทำงาน ล็อกเป้าแม่นๆ!")
         task.spawn(function()
             local bglEvent = ReplicatedStorage:WaitForChild("BGLRecycleEvent", 5)
             
@@ -309,7 +309,6 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                 local hasFullText = false
                 local safeZoneCFrame = _G.HomePlaceArgs or (lp.Character and lp.Character.PrimaryPart and lp.Character.PrimaryPart.CFrame)
                 
-                -- ซ่อน UI ถาวร
                 pcall(function()
                     local ui = lp.PlayerGui:FindFirstChild("Random-items")
                     if ui and ui:FindFirstChild("RecycleUI") then
@@ -318,7 +317,6 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                     end
                 end)
                 
-                -- สแกนกระเป๋า
                 local uiBagCount = 0
                 pcall(function()
                     for _, gui in pairs(lp.PlayerGui:GetDescendants()) do
@@ -345,7 +343,7 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                 
                 if shouldSell then
                     -- ==========================
-                    -- 💰 โหมดขายของ
+                    -- 💰 โหมดขายของ (Auto-Aim)
                     -- ==========================
                     if not _G.SellPlaceArgs then
                         sendNotify("หาจุดขายไม่เจอ!", "โปรดตั้งพิกัดจุดขาย (ปุ่ม 2) ก่อนเริ่ม")
@@ -357,7 +355,7 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                     if lp.Character and lp.Character.PrimaryPart then
                         lp.Character:PivotTo(CFrame.new(sPos + Vector3.new(0, 3, 0)))
                         lp.Character.PrimaryPart.Velocity = Vector3.new(0,0,0)
-                        task.wait(0.5) -- *เพิ่มดีเลย์รอเกมโหลด 0.5 วิ*
+                        task.wait(0.1)
                     end
 
                     local sellPrompt = nil
@@ -381,15 +379,17 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                     if sellPrompt then
                         local pPos = getPromptPos(sellPrompt)
                         if pPos and lp.Character and lp.Character.PrimaryPart then
-                            lp.Character:PivotTo(CFrame.new(pPos + Vector3.new(0, 2, 0)))
+                            -- Auto-Aim: วาร์ปไปจุดขาย + บังคับหันหน้าเข้าหาจอคอมเป๊ะๆ
+                            local charPos = pPos + Vector3.new(0, 2, 0)
+                            lp.Character:PivotTo(CFrame.new(charPos, Vector3.new(pPos.X, charPos.Y, pPos.Z)))
                             lp.Character.PrimaryPart.Velocity = Vector3.new(0,0,0)
-                            task.wait(0.2)
+                            task.wait(0.15) -- ให้เกมตั้งสติว่าเราหันหน้ามองแล้ว
                         end
                         
                         local sellRemote = sellPrompt:FindFirstChild("RecycleSellRemote") or sellPrompt.Parent:FindFirstChild("RecycleSellRemote", true)
                         if sellRemote then
                             fireTargetPrompt(sellPrompt)
-                            task.wait(0.2)
+                            task.wait(0.1)
                             pcall(function() sellRemote:FireServer("SellAll") end)
                         else
                             for _, obj in pairs(workspace:GetDescendants()) do
@@ -398,12 +398,10 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                                 end
                             end
                         end
-                        task.wait(0.2) 
+                        task.wait(0.1) 
                         pcall(function() ReplicatedStorage:WaitForChild("BagRemotes", 2):WaitForChild("GetState", 2):InvokeServer() end)
                         _G.IsBagFull_ServerSignal = false
                         sendNotify("Recycle Sold", "ขายของสำเร็จ! วาร์ปกลับบ้าน")
-                    else
-                        sendNotify("หาจุดขายไม่เจอ!", "ไม่พบปุ่ม SELL บริเวณพิกัดที่ตั้งไว้")
                     end
                     
                     if safeZoneCFrame and lp.Character and lp.Character.PrimaryPart then
@@ -412,10 +410,10 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                     end
                     
                     releaseLock()
-                    task.wait(0.2)
+                    task.wait(0.1) 
                 else
                     -- ==========================
-                    -- 🎰 โหมดสุ่มสปิน 
+                    -- 🎰 โหมดสุ่มสปิน (Auto-Aim)
                     -- ==========================
                     if not _G.SpinPlaceArgs then
                         sendNotify("หาจุดสุ่มไม่เจอ!", "โปรดตั้งพิกัดจุดสุ่ม (ปุ่ม 1) ก่อนเริ่ม")
@@ -427,7 +425,7 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                     if lp.Character and lp.Character.PrimaryPart then
                         lp.Character:PivotTo(CFrame.new(spinPos + Vector3.new(0, 3, 0)))
                         lp.Character.PrimaryPart.Velocity = Vector3.new(0,0,0)
-                        task.wait(0.5) -- *เพิ่มดีเลย์รอเซิร์ฟเวอร์เช็คตำแหน่งตัวละคร 0.5 วิ*
+                        task.wait(0.1) 
                     end
                     
                     local spinPrompt = nil
@@ -449,8 +447,16 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                     end
                     
                     if spinPrompt then
+                        local pPos = getPromptPos(spinPrompt)
+                        if pPos and lp.Character and lp.Character.PrimaryPart then
+                            -- Auto-Aim: บังคับตัวละครให้ "จ้องตา" กับตู้สุ่ม
+                            local charPos = spinPos + Vector3.new(0, 3, 0)
+                            lp.Character:PivotTo(CFrame.new(charPos, Vector3.new(pPos.X, charPos.Y, pPos.Z)))
+                            lp.Character.PrimaryPart.Velocity = Vector3.new(0,0,0)
+                            task.wait(0.15) -- เพิ่มเวลาให้เกมรับรู้ทิศทางการหันหน้า
+                        end
                         fireTargetPrompt(spinPrompt)
-                        task.wait(0.2)
+                        task.wait(0.1)
                     end
 
                     if bglEvent then
