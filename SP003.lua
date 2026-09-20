@@ -1,4 +1,4 @@
---// Universal LuaRBX - Thai Edition (AIO: V.Max Final - 3 Waypoints & Ultra Clean UI Fix)
+--// Universal LuaRBX - Thai Edition (AIO: V.Max Final - Ultimate UI Nuke & Pet Farm)
 --// Keybind เปิด/ปิดเมนู: J
 
 -- ==========================================
@@ -109,7 +109,7 @@ mk("UICorner", {Parent=window, CornerRadius=UDim.new(0,10)})
 mk("UIStroke", {Parent=window, Color=Color3.fromRGB(65,65,65), Thickness=1, Transparency=0.4})
 
 local top = mk("Frame", {BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 40), Parent = window})
-mk("TextLabel", {Text = "AIO Farm Hub - V.Max Final (3 Waypoints)", Font = Enum.Font.GothamBold, TextSize = 15, TextColor3 = Color3.fromRGB(240,240,240), BackgroundTransparency = 1, Position = UDim2.new(0, 15, 0, 0), Size = UDim2.new(0, 400, 1, 0), TextXAlignment = Enum.TextXAlignment.Left, Parent = top})
+mk("TextLabel", {Text = "AIO Farm Hub - V.Max Final (Ultra Clean)", Font = Enum.Font.GothamBold, TextSize = 15, TextColor3 = Color3.fromRGB(240,240,240), BackgroundTransparency = 1, Position = UDim2.new(0, 15, 0, 0), Size = UDim2.new(0, 400, 1, 0), TextXAlignment = Enum.TextXAlignment.Left, Parent = top})
 local minBtn = mk("TextButton", {Text = "-", Font=Enum.Font.GothamBold, TextSize=22, TextColor3=Color3.fromRGB(150,150,150), BackgroundTransparency=1, AnchorPoint=Vector2.new(1,0.5), Position=UDim2.new(1,-12,0.5,0), Size=UDim2.fromOffset(30,30), Parent=top})
 mk("Frame", {BackgroundColor3 = Color3.fromRGB(65,65,65), BorderSizePixel=0, Position=UDim2.new(0,0,0,40), Size=UDim2.new(1,0,0,1), Parent=window})
 
@@ -213,58 +213,60 @@ local function getPromptPos(prompt)
 end
 
 -- ==========================================
--- 🛠️ ระบบกวาดล้าง UI รบกวน (อัปเดตแก้อาการ ITEM COLLECTED บังจอ 100%)
+-- 🛠️ ระบบกวาดล้าง UI นิวเคลียร์ล้างบาง (อัปเดต 2 ภาษา + เตะนอกจอ)
 -- ==========================================
+local function forceClick(guiObject)
+    if getconnections then
+        for _, conn in pairs(getconnections(guiObject.MouseButton1Click)) do pcall(function() conn:Fire() end) end
+        for _, conn in pairs(getconnections(guiObject.Activated)) do pcall(function() conn:Fire() end) end
+    elseif firesignal then
+        pcall(function() firesignal(guiObject.MouseButton1Click) end)
+        pcall(function() firesignal(guiObject.Activated) end)
+    end
+end
+
 task.spawn(function()
-    while task.wait(0.1) do -- เพิ่มความเร็วการสแกนเป็น 0.1 วินาที
+    while task.wait(0.1) do
         pcall(function()
             for _, gui in pairs(lp.PlayerGui:GetChildren()) do
                 if gui:IsA("ScreenGui") and gui.Enabled and gui.Name ~= "UniversalLuaRBX" then
-                    local hideGui = false
                     for _, desc in pairs(gui:GetDescendants()) do
-                        if (desc:IsA("TextButton") or desc:IsA("TextLabel") or desc:IsA("ImageButton")) and desc.Visible then
-                            local txtStr = tostring(desc.Text)
-                            local txtUpper = string.upper(txtStr)
+                        if desc:IsA("TextLabel") or desc:IsA("TextButton") then
+                            local txtUpper = string.upper(tostring(desc.Text))
                             
-                            -- รองรับการปิด ITEM COLLECTED ทั้งภาษาไทยและอังกฤษแบบเจาะจง
-                            if txtUpper:find("ITEM COLLECTED") or txtStr:find("คลิกที่ใดก็ได้เพื่อปิด") or txtUpper:find("CLICK ANYWHERE TO CLOSE") then
-                                -- ล่องหน Frame 
-                                local p = desc.Parent
-                                for i=1, 6 do
-                                    if p and (p:IsA("Frame") or p:IsA("ImageLabel")) then p.Visible = false end
-                                    if p then p = p.Parent end
+                            -- เจาะจงหาข้อความรกๆ ไม่ว่าจะภาษาอะไร
+                            if txtUpper:find("ITEM COLLECTED") or txtUpper:find("CLICK ANYWHERE") or txtUpper:find("คลิกที่ใดก็ได้") or txtUpper == "ปิด" or txtUpper == "CLOSE" then
+                                local highestFrame = desc
+                                -- ไล่หา Frame กรอบใหญ่สุดของมัน
+                                while highestFrame.Parent and highestFrame.Parent:IsA("GuiObject") do
+                                    highestFrame = highestFrame.Parent
                                 end
                                 
-                                -- จำลองการคลิกปิดเพื่อไม่ให้เกมค้าง
-                                local bgBtn = desc.Parent:FindFirstChildWhichIsA("TextButton", true) or (desc.Parent.Parent and desc.Parent.Parent:FindFirstChildWhichIsA("TextButton", true))
-                                if bgBtn and getconnections then
-                                    for _, conn in pairs(getconnections(bgBtn.MouseButton1Click)) do pcall(function() conn:Fire() end) end
-                                end
-                                
-                                -- สั่งปิดตัว ScreenGui เลยถ้าไม่ใช่หน้าต่างสุ่มหลัก
-                                if not string.lower(gui.Name):find("random%-items") then
-                                    hideGui = true
+                                if highestFrame then
+                                    -- 1. รัวปุ่มจำลองคลิกทุกอันที่ขวางหน้า เพื่อให้เกมรู้ว่ากดปิดแล้ว
+                                    for _, btn in pairs(highestFrame:GetDescendants()) do
+                                        if btn:IsA("GuiButton") then
+                                            forceClick(btn)
+                                        end
+                                    end
+                                    -- 2. เตะกระเด็นออกนอกจอ พร้อมล่องหน
+                                    highestFrame.Position = UDim2.new(9999, 0, 9999, 0)
+                                    highestFrame.Visible = false
                                 end
                             end
                             
-                            if txtUpper == "ปิด" or txtUpper == "CLOSE" then
-                                hideGui = true
-                                local clickTarget = desc:IsA("TextButton") and desc or desc.Parent
-                                if clickTarget and clickTarget:IsA("TextButton") and getconnections then
-                                    for _, conn in pairs(getconnections(clickTarget.MouseButton1Click)) do pcall(function() conn:Fire() end) end
-                                end
-                            end
-                            
-                            if txtStr:find("เอ๊ะ! มีของเก่ามาขายไหม") or txtStr:find("สิ่งนี้มีค่าเท่าไหร่ตอนนี่") or txtStr:find("1.) ขายทั้งหมด") then
-                                hideGui = true
+                            -- ซ่อนหน้าต่าง NPC ซื้อขาย
+                            if txtUpper:find("มีของเก่ามาขายไหม") or txtUpper:find("ขายทั้งหมด") then
+                                gui.Enabled = false
                             end
                         end
                     end
+                    
                     local n = string.lower(gui.Name)
-                    if n:find("placement") or n:find("preview") or n:find("confirm") or n:find("build") or n:find("craft") or n:find("reward") or n:find("collected") then
-                        hideGui = true
+                    -- กวาดล้างพวกหน้าต่าง Reward โง่ๆ ทิ้งไปเลย
+                    if n:find("reward") or n:find("collected") then
+                        gui.Enabled = false
                     end
-                    if hideGui then gui.Enabled = false end
                 end
             end
         end)
@@ -317,10 +319,12 @@ createSwitch(col1, "🎰 4. เริ่มออโต้สุ่มขยะ"
                 
                 local safeZoneCFrame = _G.HomePlaceArgs or (lp.Character and lp.Character.PrimaryPart and lp.Character.PrimaryPart.CFrame)
                 
+                -- ซ่อนหน้าต่างสุ่มขยะ (Random-items) ออกนอกจอแบบโหดๆ
                 pcall(function()
                     local ui = lp.PlayerGui:FindFirstChild("Random-items")
                     if ui and ui:FindFirstChild("RecycleUI") then
                         ui.RecycleUI.Position = UDim2.new(9999, 0, 9999, 0)
+                        ui.RecycleUI.Visible = false
                     end
                 end)
                 
